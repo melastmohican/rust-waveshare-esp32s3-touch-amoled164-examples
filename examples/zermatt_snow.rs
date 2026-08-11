@@ -52,39 +52,39 @@
 use defmt::info;
 use embassy_executor::Spawner;
 use esp_backtrace as _;
-use esp_println as _;
 use esp_hal::{
     dma::DmaRxBuf,
     dma_buffers,
     gpio::{Level, Output, OutputConfig},
     interrupt::software::SoftwareInterruptControl,
     spi::{
-        master::{Config, Spi},
         Mode,
+        master::{Config, Spi},
     },
     time::Rate,
     timer::timg::TimerGroup,
 };
+use esp_println as _;
 
 use embedded_graphics::{
-    framebuffer::{buffer_size, Framebuffer},
+    framebuffer::{Framebuffer, buffer_size},
     geometry::{Point, Size},
     image::{GetPixel, Image},
     pixelcolor::{
-        raw::{BigEndian, RawU16},
         Rgb565,
+        raw::{BigEndian, RawU16},
     },
     prelude::*,
     primitives::Rectangle,
 };
 
 use display_driver::{
-    eg::FrameBufferedDisplayDriver, panel::reset::LCDResetOption, ColorFormat, DisplayDriver,
-    FrameControl,
+    ColorFormat, DisplayDriver, FrameControl, eg::FrameBufferedDisplayDriver,
+    panel::reset::LCDResetOption,
 };
 use display_driver_co5300::{
-    spec::{Co5300Spec, PanelSpec},
     Co5300,
+    spec::{Co5300Spec, PanelSpec},
 };
 use display_driver_qspi::{QspiConfig, QspiDisplayBus};
 use rust_waveshare_esp32s3_touch_amoled164_examples::qspi::EspHalQspiDevice;
@@ -128,14 +128,8 @@ const GRID_SIZE_BYTES: usize = GRID_TOTAL_CELLS / CELLS_PER_BYTE;
 const FLAKE_SIZE: i32 = 2; // Small 2x2 pixel snowflakes
 const SNOW_COLOR: Rgb565 = Rgb565::WHITE;
 
-type FbType = Framebuffer<
-    Rgb565,
-    RawU16,
-    BigEndian,
-    WIDTH,
-    HEIGHT,
-    { buffer_size::<Rgb565>(WIDTH, HEIGHT) },
->;
+type FbType =
+    Framebuffer<Rgb565, RawU16, BigEndian, WIDTH, HEIGHT, { buffer_size::<Rgb565>(WIDTH, HEIGHT) }>;
 
 // Simple atomic LCG PRNG
 static RNG_STATE: core::sync::atomic::AtomicU32 = core::sync::atomic::AtomicU32::new(12345);
@@ -273,7 +267,9 @@ async fn main(_spawner: Spawner) {
 
     info!("Drawing initial Zermatt image to framebuffer...");
     fb_disp.clear(Rgb565::BLACK).unwrap();
-    Image::new(&bmp, Point::new(0, 0)).draw(&mut fb_disp).unwrap();
+    Image::new(&bmp, Point::new(0, 0))
+        .draw(&mut fb_disp)
+        .unwrap();
 
     let chunk_size: u16 = 38;
     let total_lines: u16 = 456;
@@ -341,7 +337,7 @@ async fn main(_spawner: Spawner) {
         embassy_time::Timer::after(embassy_time::Duration::from_millis(20)).await;
 
         frame_count += 1;
-        if frame_count % 50 == 0 {
+        if frame_count.is_multiple_of(50) {
             info!("Frame: {}", frame_count);
         }
     }

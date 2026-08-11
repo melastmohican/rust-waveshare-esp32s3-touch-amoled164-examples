@@ -49,38 +49,38 @@
 use defmt::info;
 use embassy_executor::Spawner;
 use esp_backtrace as _;
-use esp_println as _;
 use esp_hal::{
     dma::DmaRxBuf,
     dma_buffers,
     gpio::{Level, Output, OutputConfig},
     interrupt::software::SoftwareInterruptControl,
     spi::{
-        master::{Config, Spi},
         Mode,
+        master::{Config, Spi},
     },
     time::Rate,
     timer::timg::TimerGroup,
 };
+use esp_println as _;
 
 use embedded_graphics::{
-    framebuffer::{buffer_size, Framebuffer},
+    framebuffer::{Framebuffer, buffer_size},
     geometry::Point,
     image::Image,
     pixelcolor::{
-        raw::{BigEndian, RawU16},
         Rgb565,
+        raw::{BigEndian, RawU16},
     },
     prelude::*,
 };
 
 use display_driver::{
-    eg::FrameBufferedDisplayDriver, panel::reset::LCDResetOption, ColorFormat, DisplayDriver,
-    FrameControl,
+    ColorFormat, DisplayDriver, FrameControl, eg::FrameBufferedDisplayDriver,
+    panel::reset::LCDResetOption,
 };
 use display_driver_co5300::{
-    spec::{Co5300Spec, PanelSpec},
     Co5300,
+    spec::{Co5300Spec, PanelSpec},
 };
 use display_driver_qspi::{QspiConfig, QspiDisplayBus};
 use rust_waveshare_esp32s3_touch_amoled164_examples::qspi::EspHalQspiDevice;
@@ -111,14 +111,8 @@ impl Co5300Spec for WaveshareAmoled164 {
 const WIDTH: usize = 280;
 const HEIGHT: usize = 456;
 
-type FbType = Framebuffer<
-    Rgb565,
-    RawU16,
-    BigEndian,
-    WIDTH,
-    HEIGHT,
-    { buffer_size::<Rgb565>(WIDTH, HEIGHT) },
->;
+type FbType =
+    Framebuffer<Rgb565, RawU16, BigEndian, WIDTH, HEIGHT, { buffer_size::<Rgb565>(WIDTH, HEIGHT) }>;
 
 // ---------------------------------------------------------------------------
 // Entry point
@@ -214,7 +208,9 @@ async fn main(_spawner: Spawner) {
 
     info!("Drawing Zermatt image to framebuffer...");
     fb_disp.clear(Rgb565::BLACK).unwrap();
-    Image::new(&bmp, Point::new(0, 0)).draw(&mut fb_disp).unwrap();
+    Image::new(&bmp, Point::new(0, 0))
+        .draw(&mut fb_disp)
+        .unwrap();
 
     // Flush framebuffer → display in 12 38-line chunks (456 lines total)
     info!("Flushing framebuffer to display...");

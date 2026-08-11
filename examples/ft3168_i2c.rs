@@ -26,7 +26,6 @@
 use defmt::info;
 use embassy_executor::Spawner;
 use esp_backtrace as _;
-use esp_println as _;
 use esp_hal::{
     delay::Delay,
     dma::DmaRxBuf,
@@ -35,21 +34,25 @@ use esp_hal::{
     i2c::master::{Config as I2cConfig, I2c},
     interrupt::software::SoftwareInterruptControl,
     spi::{
-        master::{Config as SpiConfig, Spi},
         Mode,
+        master::{Config as SpiConfig, Spi},
     },
     time::Rate,
     timer::timg::TimerGroup,
 };
-use ft3x68_rs::{Ft3x68Driver, ResetInterface, FT3168_DEVICE_ADDRESS};
+use esp_println as _;
+use ft3x68_rs::{FT3168_DEVICE_ADDRESS, Ft3x68Driver, ResetInterface};
 
 use embedded_graphics::{
-    framebuffer::{buffer_size, Framebuffer},
+    framebuffer::{Framebuffer, buffer_size},
     geometry::Point,
-    mono_font::{ascii::{FONT_7X13, FONT_9X15_BOLD}, MonoTextStyle},
+    mono_font::{
+        MonoTextStyle,
+        ascii::{FONT_7X13, FONT_9X15_BOLD},
+    },
     pixelcolor::{
-        raw::{BigEndian, RawU16},
         Rgb565,
+        raw::{BigEndian, RawU16},
     },
     prelude::*,
     primitives::{Circle, PrimitiveStyle},
@@ -57,12 +60,12 @@ use embedded_graphics::{
 };
 
 use display_driver::{
-    eg::FrameBufferedDisplayDriver, panel::reset::LCDResetOption, ColorFormat, DisplayDriver,
-    FrameControl,
+    ColorFormat, DisplayDriver, FrameControl, eg::FrameBufferedDisplayDriver,
+    panel::reset::LCDResetOption,
 };
 use display_driver_co5300::{
-    spec::{Co5300Spec, PanelSpec},
     Co5300,
+    spec::{Co5300Spec, PanelSpec},
 };
 use display_driver_qspi::{QspiConfig, QspiDisplayBus};
 use rust_waveshare_esp32s3_touch_amoled164_examples::qspi::EspHalQspiDevice;
@@ -119,14 +122,8 @@ impl<'a> ResetInterface for GpioReset<'a> {
 const WIDTH: usize = 280;
 const HEIGHT: usize = 456;
 
-type FbType = Framebuffer<
-    Rgb565,
-    RawU16,
-    BigEndian,
-    WIDTH,
-    HEIGHT,
-    { buffer_size::<Rgb565>(WIDTH, HEIGHT) },
->;
+type FbType =
+    Framebuffer<Rgb565, RawU16, BigEndian, WIDTH, HEIGHT, { buffer_size::<Rgb565>(WIDTH, HEIGHT) }>;
 
 #[derive(Debug, Clone, Copy)]
 pub struct TouchData {
@@ -172,15 +169,13 @@ async fn main(_spawner: Spawner) {
 
     // ── 3. Instantiate Ft3x68Driver ────────────────────────────────────────
     info!("Instantiating `ft3x68-rs` touch driver...");
-    let mut touch_driver = Ft3x68Driver::new(
-        i2c,
-        FT3168_DEVICE_ADDRESS,
-        reset,
-        delay,
-    );
+    let mut touch_driver = Ft3x68Driver::new(i2c, FT3168_DEVICE_ADDRESS, reset, delay);
 
     if let Err(e) = touch_driver.initialize() {
-        info!("Warning initializing ft3x68-rs driver: {:?}", defmt::Debug2Format(&e));
+        info!(
+            "Warning initializing ft3x68-rs driver: {:?}",
+            defmt::Debug2Format(&e)
+        );
     }
 
     if let Ok(dev_id) = touch_driver.read_device_id() {
@@ -260,16 +255,28 @@ async fn main(_spawner: Spawner) {
     let total_lines: u16 = 456;
 
     // Initial Screen Draw
-    render_ui(&mut fb_disp, None, &title_style, &sub_style, &text_style, &active_style);
+    render_ui(
+        &mut fb_disp,
+        None,
+        &title_style,
+        &sub_style,
+        &text_style,
+        &active_style,
+    );
 
     for y_start in (0..total_lines).step_by(chunk_size as usize) {
         let y_end = y_start + chunk_size - 1;
         let frame_ctrl = match (y_start == 0, y_end == total_lines - 1) {
             (true, _) => FrameControl::new_first(),
             (_, true) => FrameControl::new_last(),
-            _ => FrameControl { first: false, last: false },
+            _ => FrameControl {
+                first: false,
+                last: false,
+            },
         };
-        let _ = fb_disp.flush_lines_with_frame_control(y_start, y_end, frame_ctrl).await;
+        let _ = fb_disp
+            .flush_lines_with_frame_control(y_start, y_end, frame_ctrl)
+            .await;
     }
 
     info!("Touch monitoring active using `ft3x68-rs`!");
@@ -281,8 +288,8 @@ async fn main(_spawner: Spawner) {
     loop {
         let current_touch = match touch_driver.touch1() {
             Ok(ft3x68_rs::TouchState::Pressed(point)) => Some(TouchData {
-                x: point.x as u16,
-                y: point.y as u16,
+                x: point.x,
+                y: point.y,
             }),
             _ => None,
         };
@@ -309,23 +316,35 @@ async fn main(_spawner: Spawner) {
         };
 
         if should_redraw {
-            render_ui(&mut fb_disp, current_touch, &title_style, &sub_style, &text_style, &active_style);
+            render_ui(
+                &mut fb_disp,
+                current_touch,
+                &title_style,
+                &sub_style,
+                &text_style,
+                &active_style,
+            );
 
             for y_start in (0..total_lines).step_by(chunk_size as usize) {
                 let y_end = y_start + chunk_size - 1;
                 let frame_ctrl = match (y_start == 0, y_end == total_lines - 1) {
                     (true, _) => FrameControl::new_first(),
                     (_, true) => FrameControl::new_last(),
-                    _ => FrameControl { first: false, last: false },
+                    _ => FrameControl {
+                        first: false,
+                        last: false,
+                    },
                 };
-                let _ = fb_disp.flush_lines_with_frame_control(y_start, y_end, frame_ctrl).await;
+                let _ = fb_disp
+                    .flush_lines_with_frame_control(y_start, y_end, frame_ctrl)
+                    .await;
             }
 
             last_touch = current_touch;
         }
 
         poll_count += 1;
-        if poll_count % 100 == 0 {
+        if poll_count.is_multiple_of(100) {
             info!("Touch loop active (poll count: {})...", poll_count);
         }
 
@@ -370,9 +389,13 @@ fn render_ui<D>(
         let str_x = format_num(&mut buf_x, "  X Coord: ", t.x);
         let str_y = format_num(&mut buf_y, "  Y Coord: ", t.y);
 
-        Text::new("STATUS: TOUCH DETECTED!", Point::new(10, 100), *active_style)
-            .draw(target)
-            .ok();
+        Text::new(
+            "STATUS: TOUCH DETECTED!",
+            Point::new(10, 100),
+            *active_style,
+        )
+        .draw(target)
+        .ok();
 
         Text::new(str_x, Point::new(10, 125), *text_style)
             .draw(target)
@@ -383,8 +406,8 @@ fn render_ui<D>(
             .ok();
 
         // Draw touch marker at (X, Y) constrained to screen size (280x456)
-        let cx = (t.x as i32).min(270).max(10);
-        let cy = (t.y as i32).min(446).max(10);
+        let cx = (t.x as i32).clamp(10, 270);
+        let cy = (t.y as i32).clamp(10, 446);
 
         Circle::new(Point::new(cx - 15, cy - 15), 30)
             .into_styled(PrimitiveStyle::with_stroke(Rgb565::RED, 3))
@@ -404,9 +427,13 @@ fn render_ui<D>(
             .draw(target)
             .ok();
 
-        Text::new("see live X/Y coordinates.", Point::new(10, 150), *text_style)
-            .draw(target)
-            .ok();
+        Text::new(
+            "see live X/Y coordinates.",
+            Point::new(10, 150),
+            *text_style,
+        )
+        .draw(target)
+        .ok();
     }
 }
 

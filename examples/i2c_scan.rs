@@ -25,7 +25,6 @@
 use defmt::info;
 use embassy_executor::Spawner;
 use esp_backtrace as _;
-use esp_println as _;
 use esp_hal::{
     delay::Delay,
     dma::DmaRxBuf,
@@ -34,32 +33,36 @@ use esp_hal::{
     i2c::master::{Config as I2cConfig, I2c},
     interrupt::software::SoftwareInterruptControl,
     spi::{
-        master::{Config as SpiConfig, Spi},
         Mode,
+        master::{Config as SpiConfig, Spi},
     },
     time::Rate,
     timer::timg::TimerGroup,
 };
+use esp_println as _;
 
 use embedded_graphics::{
-    framebuffer::{buffer_size, Framebuffer},
+    framebuffer::{Framebuffer, buffer_size},
     geometry::Point,
-    mono_font::{ascii::{FONT_7X13, FONT_9X15_BOLD}, MonoTextStyle},
+    mono_font::{
+        MonoTextStyle,
+        ascii::{FONT_7X13, FONT_9X15_BOLD},
+    },
     pixelcolor::{
-        raw::{BigEndian, RawU16},
         Rgb565,
+        raw::{BigEndian, RawU16},
     },
     prelude::*,
     text::Text,
 };
 
 use display_driver::{
-    eg::FrameBufferedDisplayDriver, panel::reset::LCDResetOption, ColorFormat, DisplayDriver,
-    FrameControl,
+    ColorFormat, DisplayDriver, FrameControl, eg::FrameBufferedDisplayDriver,
+    panel::reset::LCDResetOption,
 };
 use display_driver_co5300::{
-    spec::{Co5300Spec, PanelSpec},
     Co5300,
+    spec::{Co5300Spec, PanelSpec},
 };
 use display_driver_qspi::{QspiConfig, QspiDisplayBus};
 use rust_waveshare_esp32s3_touch_amoled164_examples::qspi::EspHalQspiDevice;
@@ -89,14 +92,8 @@ impl Co5300Spec for WaveshareAmoled164 {
 const WIDTH: usize = 280;
 const HEIGHT: usize = 456;
 
-type FbType = Framebuffer<
-    Rgb565,
-    RawU16,
-    BigEndian,
-    WIDTH,
-    HEIGHT,
-    { buffer_size::<Rgb565>(WIDTH, HEIGHT) },
->;
+type FbType =
+    Framebuffer<Rgb565, RawU16, BigEndian, WIDTH, HEIGHT, { buffer_size::<Rgb565>(WIDTH, HEIGHT) }>;
 
 // ---------------------------------------------------------------------------
 // Helper: Identify known I2C device addresses
@@ -137,7 +134,11 @@ async fn main(_spawner: Spawner) {
 
     // ── 0. Hardware Reset Pulse for Peripherals ───────────────────────────
     info!("Pulsing hardware reset pins...");
-    let mut lcd_rst_pin = Output::new(unsafe { peripherals.GPIO21.clone_unchecked() }, Level::Low, OutputConfig::default());
+    let mut lcd_rst_pin = Output::new(
+        unsafe { peripherals.GPIO21.clone_unchecked() },
+        Level::Low,
+        OutputConfig::default(),
+    );
 
     delay.delay_millis(20);
     lcd_rst_pin.set_high();
@@ -277,8 +278,7 @@ async fn main(_spawner: Spawner) {
             .unwrap();
         y += 20;
     } else {
-        for i in 0..found_count {
-            let addr = found_addrs[i];
+        for &addr in found_addrs.iter().take(found_count) {
             let desc = get_device_desc(addr);
             let mut line_buf = [0u8; 36];
             let line_str = format_found_line(&mut line_buf, addr, desc);

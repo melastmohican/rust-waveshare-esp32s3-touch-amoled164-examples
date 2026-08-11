@@ -60,7 +60,14 @@ impl<'d> QspiDevice for EspHalQspiDevice<'d> {
             .spi
             .take()
             .unwrap()
-            .half_duplex_write(data_mode, cmd, addr, transaction.dummy_cycles, data.len(), tx_buf)
+            .half_duplex_write(
+                data_mode,
+                cmd,
+                addr,
+                transaction.dummy_cycles,
+                data.len(),
+                tx_buf,
+            )
             .map_err(|e| {
                 info!("half_duplex_write error: {}", defmt::Debug2Format(&e));
                 esp_hal::spi::Error::Unsupported
@@ -93,7 +100,14 @@ impl<'d> QspiDevice for EspHalQspiDevice<'d> {
             .spi
             .take()
             .unwrap()
-            .half_duplex_read(data_mode, cmd, addr, transaction.dummy_cycles, buffer.len(), rx_buf)
+            .half_duplex_read(
+                data_mode,
+                cmd,
+                addr,
+                transaction.dummy_cycles,
+                buffer.len(),
+                rx_buf,
+            )
             .map_err(|_| esp_hal::spi::Error::Unsupported)?;
 
         transfer.wait_for_done().await;
@@ -110,7 +124,7 @@ impl<'d> QspiDevice for EspHalQspiDevice<'d> {
 
 fn is_slice_in_dram(data: &[u8]) -> bool {
     let ptr = data.as_ptr() as usize;
-    ptr >= 0x3FC0_0000 && ptr < 0x4000_0000
+    (0x3FC0_0000..0x4000_0000).contains(&ptr)
 }
 
 enum DmaOperationKind {

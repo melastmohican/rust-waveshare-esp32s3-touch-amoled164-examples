@@ -25,7 +25,6 @@
 use defmt::info;
 use embassy_executor::Spawner;
 use esp_backtrace as _;
-use esp_println as _;
 use esp_hal::{
     dma::DmaRxBuf,
     dma_buffers,
@@ -33,21 +32,25 @@ use esp_hal::{
     i2c::master::{Config as I2cConfig, I2c},
     interrupt::software::SoftwareInterruptControl,
     spi::{
-        master::{Config as SpiConfig, Spi},
         Mode,
+        master::{Config as SpiConfig, Spi},
     },
     time::Rate,
     timer::timg::TimerGroup,
 };
+use esp_println as _;
 use ph_qmi8658::{Config, I2cConfig as QmiI2cConfig, Qmi8658Address, Qmi8658I2c};
 
 use embedded_graphics::{
-    framebuffer::{buffer_size, Framebuffer},
+    framebuffer::{Framebuffer, buffer_size},
     geometry::{Point, Size},
-    mono_font::{ascii::{FONT_7X13, FONT_9X15_BOLD}, MonoTextStyle},
+    mono_font::{
+        MonoTextStyle,
+        ascii::{FONT_7X13, FONT_9X15_BOLD},
+    },
     pixelcolor::{
-        raw::{BigEndian, RawU16},
         Rgb565,
+        raw::{BigEndian, RawU16},
     },
     prelude::*,
     primitives::{PrimitiveStyle, Rectangle},
@@ -55,12 +58,12 @@ use embedded_graphics::{
 };
 
 use display_driver::{
-    eg::FrameBufferedDisplayDriver, panel::reset::LCDResetOption, ColorFormat, DisplayDriver,
-    FrameControl,
+    ColorFormat, DisplayDriver, FrameControl, eg::FrameBufferedDisplayDriver,
+    panel::reset::LCDResetOption,
 };
 use display_driver_co5300::{
-    spec::{Co5300Spec, PanelSpec},
     Co5300,
+    spec::{Co5300Spec, PanelSpec},
 };
 use display_driver_qspi::{QspiConfig, QspiDisplayBus};
 use rust_waveshare_esp32s3_touch_amoled164_examples::qspi::EspHalQspiDevice;
@@ -90,14 +93,8 @@ impl Co5300Spec for WaveshareAmoled164 {
 const WIDTH: usize = 280;
 const HEIGHT: usize = 456;
 
-type FbType = Framebuffer<
-    Rgb565,
-    RawU16,
-    BigEndian,
-    WIDTH,
-    HEIGHT,
-    { buffer_size::<Rgb565>(WIDTH, HEIGHT) },
->;
+type FbType =
+    Framebuffer<Rgb565, RawU16, BigEndian, WIDTH, HEIGHT, { buffer_size::<Rgb565>(WIDTH, HEIGHT) }>;
 
 // ---------------------------------------------------------------------------
 // Entry Point
@@ -143,7 +140,10 @@ async fn main(_spawner: Spawner) {
     );
 
     if let Err(e) = imu.init(&mut embassy_time::Delay).await {
-        info!("Warning initializing ph-qmi8658: {:?}", defmt::Debug2Format(&e));
+        info!(
+            "Warning initializing ph-qmi8658: {:?}",
+            defmt::Debug2Format(&e)
+        );
     } else {
         info!("`ph-qmi8658` IMU initialized successfully!");
     }
@@ -242,8 +242,11 @@ async fn main(_spawner: Spawner) {
                 gz = g.z;
             }
 
-            if poll_count % 10 == 0 {
-                info!("QMI8658 -> Accel({} {} {}) Gyro({} {} {})", ax, ay, az, gx, gy, gz);
+            if poll_count.is_multiple_of(10) {
+                info!(
+                    "QMI8658 -> Accel({} {} {}) Gyro({} {} {})",
+                    ax, ay, az, gx, gy, gz
+                );
             }
         }
 
@@ -271,15 +274,27 @@ async fn main(_spawner: Spawner) {
         let mut b_ay = [0u8; 32];
         let mut b_az = [0u8; 32];
 
-        Text::new(format_i16(&mut b_ax, "  Acc X: ", ax), Point::new(10, 122), text_style)
-            .draw(&mut fb_disp)
-            .ok();
-        Text::new(format_i16(&mut b_ay, "  Acc Y: ", ay), Point::new(10, 142), text_style)
-            .draw(&mut fb_disp)
-            .ok();
-        Text::new(format_i16(&mut b_az, "  Acc Z: ", az), Point::new(10, 162), text_style)
-            .draw(&mut fb_disp)
-            .ok();
+        Text::new(
+            format_i16(&mut b_ax, "  Acc X: ", ax),
+            Point::new(10, 122),
+            text_style,
+        )
+        .draw(&mut fb_disp)
+        .ok();
+        Text::new(
+            format_i16(&mut b_ay, "  Acc Y: ", ay),
+            Point::new(10, 142),
+            text_style,
+        )
+        .draw(&mut fb_disp)
+        .ok();
+        Text::new(
+            format_i16(&mut b_az, "  Acc Z: ", az),
+            Point::new(10, 162),
+            text_style,
+        )
+        .draw(&mut fb_disp)
+        .ok();
 
         // Gyro Box
         Text::new("GYROSCOPE (Raw)", Point::new(10, 200), label_style)
@@ -290,15 +305,27 @@ async fn main(_spawner: Spawner) {
         let mut b_gy = [0u8; 32];
         let mut b_gz = [0u8; 32];
 
-        Text::new(format_i16(&mut b_gx, "  Gyr X: ", gx), Point::new(10, 222), text_style)
-            .draw(&mut fb_disp)
-            .ok();
-        Text::new(format_i16(&mut b_gy, "  Gyr Y: ", gy), Point::new(10, 242), text_style)
-            .draw(&mut fb_disp)
-            .ok();
-        Text::new(format_i16(&mut b_gz, "  Gyr Z: ", gz), Point::new(10, 262), text_style)
-            .draw(&mut fb_disp)
-            .ok();
+        Text::new(
+            format_i16(&mut b_gx, "  Gyr X: ", gx),
+            Point::new(10, 222),
+            text_style,
+        )
+        .draw(&mut fb_disp)
+        .ok();
+        Text::new(
+            format_i16(&mut b_gy, "  Gyr Y: ", gy),
+            Point::new(10, 242),
+            text_style,
+        )
+        .draw(&mut fb_disp)
+        .ok();
+        Text::new(
+            format_i16(&mut b_gz, "  Gyr Z: ", gz),
+            Point::new(10, 262),
+            text_style,
+        )
+        .draw(&mut fb_disp)
+        .ok();
 
         // Graphical Horizon / Level Box
         Text::new("TILT VISUALIZER", Point::new(10, 300), label_style)
@@ -311,8 +338,8 @@ async fn main(_spawner: Spawner) {
             .ok();
 
         // Level indicator dot mapped from Accel X/Y (-16384..16384 -> screen box)
-        let dot_x = 140 + (ax as i32 * 110 / 16384).max(-110).min(110);
-        let dot_y = 370 + (ay as i32 * 40 / 16384).max(-40).min(40);
+        let dot_x = 140 + (ax as i32 * 110 / 16384).clamp(-110, 110);
+        let dot_y = 370 + (ay as i32 * 40 / 16384).clamp(-40, 40);
 
         Rectangle::new(Point::new(dot_x - 6, dot_y - 6), Size::new(12, 12))
             .into_styled(PrimitiveStyle::with_fill(Rgb565::RED))
@@ -325,9 +352,14 @@ async fn main(_spawner: Spawner) {
             let frame_ctrl = match (y_start == 0, y_end == total_lines - 1) {
                 (true, _) => FrameControl::new_first(),
                 (_, true) => FrameControl::new_last(),
-                _ => FrameControl { first: false, last: false },
+                _ => FrameControl {
+                    first: false,
+                    last: false,
+                },
             };
-            let _ = fb_disp.flush_lines_with_frame_control(y_start, y_end, frame_ctrl).await;
+            let _ = fb_disp
+                .flush_lines_with_frame_control(y_start, y_end, frame_ctrl)
+                .await;
         }
 
         poll_count += 1;

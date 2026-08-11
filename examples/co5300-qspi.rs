@@ -48,27 +48,27 @@
 use defmt::info;
 use embassy_executor::Spawner;
 use esp_backtrace as _;
-use esp_println as _;
 use esp_hal::{
     dma::DmaRxBuf,
     dma_buffers,
     gpio::{Level, Output, OutputConfig},
     interrupt::software::SoftwareInterruptControl,
     spi::{
-        master::{Config, Spi},
         Mode,
+        master::{Config, Spi},
     },
     time::Rate,
     timer::timg::TimerGroup,
 };
+use esp_println as _;
 
 use embedded_graphics::{
-    framebuffer::{buffer_size, Framebuffer},
+    framebuffer::{Framebuffer, buffer_size},
     geometry::{Point, Size},
-    mono_font::{ascii::FONT_9X18_BOLD, MonoTextStyle},
+    mono_font::{MonoTextStyle, ascii::FONT_9X18_BOLD},
     pixelcolor::{
-        raw::{BigEndian, RawU16},
         Rgb565,
+        raw::{BigEndian, RawU16},
     },
     prelude::*,
     primitives::{Circle, PrimitiveStyle, Rectangle},
@@ -76,16 +76,15 @@ use embedded_graphics::{
 };
 
 use display_driver::{
-    eg::FrameBufferedDisplayDriver, panel::reset::LCDResetOption, ColorFormat, DisplayDriver,
-    FrameControl,
+    ColorFormat, DisplayDriver, FrameControl, eg::FrameBufferedDisplayDriver,
+    panel::reset::LCDResetOption,
 };
 use display_driver_co5300::{
-    spec::{Co5300Spec, PanelSpec},
     Co5300,
+    spec::{Co5300Spec, PanelSpec},
 };
 use display_driver_qspi::{QspiConfig, QspiDisplayBus};
 use rust_waveshare_esp32s3_touch_amoled164_examples::qspi::EspHalQspiDevice;
-
 
 // ---------------------------------------------------------------------------
 // Panel Specification for Waveshare 1.64" AMOLED (280×456, CO5300)
@@ -112,14 +111,8 @@ impl Co5300Spec for WaveshareAmoled164 {
 const WIDTH: usize = 280;
 const HEIGHT: usize = 456;
 
-type FbType = Framebuffer<
-    Rgb565,
-    RawU16,
-    BigEndian,
-    WIDTH,
-    HEIGHT,
-    { buffer_size::<Rgb565>(WIDTH, HEIGHT) },
->;
+type FbType =
+    Framebuffer<Rgb565, RawU16, BigEndian, WIDTH, HEIGHT, { buffer_size::<Rgb565>(WIDTH, HEIGHT) }>;
 
 // ---------------------------------------------------------------------------
 // Entry point
@@ -310,4 +303,3 @@ async fn main(_spawner: Spawner) {
         info!("Tick {}...", ticks);
     }
 }
-
