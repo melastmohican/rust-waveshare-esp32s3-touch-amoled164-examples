@@ -2,6 +2,10 @@
 
 This repository contains idiomatic Rust examples for the **Waveshare ESP32-S3-Touch-AMOLED-1.64** development board, built using the [Embassy](https://embassy.dev/) async framework, `esp-hal` (v1.1), `esp-rtos`, and `defmt` logging over USB-UART.
 
+<p align="center">
+  <img src="waveshare-esp32s3-touch-amoled164.jpg" alt="Waveshare ESP32-S3-Touch-AMOLED-1.64">
+</p>
+
 ---
 
 ## Hardware Overview
