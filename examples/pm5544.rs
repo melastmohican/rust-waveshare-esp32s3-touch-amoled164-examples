@@ -217,7 +217,6 @@ async fn main(_spawner: Spawner) {
 
     info!("PM5544 test pattern displayed successfully!");
 
-    loop {
-        embassy_time::Timer::after(embassy_time::Duration::from_secs(10)).await;
-    }
+    #[allow(clippy::empty_loop)]
+    loop {}
 }

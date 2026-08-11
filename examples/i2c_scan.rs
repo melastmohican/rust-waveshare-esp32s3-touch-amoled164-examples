@@ -319,12 +319,8 @@ async fn main(_spawner: Spawner) {
 
     info!("Display output updated.");
 
-    let mut tick = 0u32;
-    loop {
-        embassy_time::Timer::after(embassy_time::Duration::from_secs(5)).await;
-        tick += 1;
-        info!("Scanner active, tick {}...", tick);
-    }
+    #[allow(clippy::empty_loop)]
+    loop {}
 }
 
 // ---------------------------------------------------------------------------

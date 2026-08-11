@@ -245,11 +245,8 @@ async fn main(_spawner: Spawner) {
         }
     }
 
-    info!("Zermatt image displayed! Entering idle loop.");
-    let mut ticks = 0;
-    loop {
-        embassy_time::Timer::after(embassy_time::Duration::from_millis(1000)).await;
-        ticks += 1;
-        info!("Tick {}...", ticks);
-    }
+    info!("Zermatt image displayed!");
+
+    #[allow(clippy::empty_loop)]
+    loop {}
 }

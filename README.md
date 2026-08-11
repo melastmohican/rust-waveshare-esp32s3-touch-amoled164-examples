@@ -106,6 +106,26 @@ cargo run --example zermatt_snow
 
 ---
 
+### 8. PDQ Graphicstest Benchmark (`pdqgraphicstest`)
+
+Executes a full 2D graphics benchmarking suite on the 280×456 CO5300 AMOLED screen inspired by Xark's classic Arduino PDQ graphicstest. Measures screen fills, text rendering, pixel loops, line fan patterns, fast H/V grids, concentric filled/outlined rectangles, triangles, circles, and rounded rectangles. Displays real-time test animations followed by a formatted scorecard on the AMOLED display and logs microsecond metrics via `defmt`.
+
+```bash
+cargo run --example pdqgraphicstest
+```
+
+---
+
+### 9. ESP32 Wi-Fi Spectrum Analyzer (`wifi_analyzer`)
+
+Renders an interactive 2.4 GHz Wi-Fi channel spectrum graph on the 280×456 CO5300 AMOLED screen inspired by `ESPWiFiAnalyzer.ino`. Features a multi-colored header banner, smooth parabolic spectrum curves for scanned Access Points, RSSI signal strength peak labels (`dBm`), open-network indicators (`*`), per-channel AP counts, and automated channel overlap noise analysis identifying the least-interfered Wi-Fi channels.
+
+```bash
+cargo run --example wifi_analyzer
+```
+
+---
+
 ## Prerequisites & Setup
 
 ### 1. Install Rust Xtensa Toolchain

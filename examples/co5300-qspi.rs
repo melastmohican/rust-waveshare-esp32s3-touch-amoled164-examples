@@ -295,11 +295,6 @@ async fn main(_spawner: Spawner) {
 
     info!("Done! Display should show the demo scene.");
 
-    info!("Entering idle loop.");
-    let mut ticks = 0;
-    loop {
-        embassy_time::Timer::after(embassy_time::Duration::from_millis(1000)).await;
-        ticks += 1;
-        info!("Tick {}...", ticks);
-    }
+    #[allow(clippy::empty_loop)]
+    loop {}
 }
